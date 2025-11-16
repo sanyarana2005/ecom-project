@@ -141,26 +141,31 @@ def init_db():
         )
         """)
 
-        # Seed users
-        cur.execute("SELECT COUNT(*) FROM users")
-        if cur.fetchone()[0] == 0:
-            logging.info("Seeding users...")
-            # Hash passwords for demo accounts
-            demo_users = [
-                ("student@college.edu", "student123", "student", "John Student", "Computer Science", 1),
-                ("student@gmail.com", "Student", "student", "Student User", "Computer Science", 1),
-                ("teacher@college.edu", "teacher123", "teacher", "Dr. Jane Teacher", "Computer Science", 1),
-                ("teacher@gmail.com", "Teacher", "teacher", "Teacher User", "Computer Science", 1),
-                ("hod@college.edu", "hod123", "hod", "Prof. Smith HOD", "Computer Science", 1),
-                ("hod@gmail.com", "hod", "hod", "HOD User", "Computer Science", 1),
-            ]
-            
-            for email, password, role, name, department, dept_id in demo_users:
+        # Seed users - check if each user exists, if not add them
+        logging.info("Seeding users...")
+        demo_users = [
+            ("student@college.edu", "student123", "student", "John Student", "Computer Science", 1),
+            ("student@gmail.com", "Student", "student", "Student User", "Computer Science", 1),
+            ("teacher@college.edu", "teacher123", "teacher", "Dr. Jane Teacher", "Computer Science", 1),
+            ("teacher@gmail.com", "Teacher", "teacher", "Teacher User", "Computer Science", 1),
+            ("hod@college.edu", "hod123", "hod", "Prof. Smith HOD", "Computer Science", 1),
+            ("hod@gmail.com", "hod", "hod", "HOD User", "Computer Science", 1),
+        ]
+        
+        for email, password, role, name, department, dept_id in demo_users:
+            # Check if user already exists
+            cur.execute("SELECT id FROM users WHERE username = ?", (email.lower(),))
+            if not cur.fetchone():
+                # User doesn't exist, create them
                 hashed_pwd = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                cur.execute(
-                    "INSERT INTO users (username, password, role, name, department, department_id) VALUES (?, ?, ?, ?, ?, ?)",
-                    (email.lower(), hashed_pwd, role, name, department, dept_id)
-                )
+                try:
+                    cur.execute(
+                        "INSERT INTO users (username, password, role, name, department, department_id) VALUES (?, ?, ?, ?, ?, ?)",
+                        (email.lower(), hashed_pwd, role, name, department, dept_id)
+                    )
+                    logging.info(f"Created user: {email.lower()}")
+                except Exception as e:
+                    logging.warning(f"Failed to create user {email.lower()}: {str(e)}")
 
         # Seed resources
         cur.execute("SELECT COUNT(*) FROM resources")
@@ -244,8 +249,11 @@ def login():
         user_id, username, hashed_password, role, name, department, department_id = user_row
     except Exception as db_error:
         logging.error(f"Database query error: {str(db_error)}")
+        logging.error(f"Error type: {type(db_error).__name__}")
+        logging.error(f"Error details: {str(db_error)}")
         # Try to initialize database if connection fails
         try:
+            logging.info("Attempting to reinitialize database...")
             init_db()
             conn = db_conn()
             cur = conn.cursor()
@@ -257,12 +265,13 @@ def login():
             user_id, username, hashed_password, role, name, department, department_id = user_row
         except Exception as init_error:
             logging.error(f"Database initialization failed: {str(init_error)}")
+            logging.error(f"Init error type: {type(init_error).__name__}")
             if 'conn' in locals():
                 try:
                     conn.close()
                 except:
                     pass
-            return jsonify({"message": "Database error. Please try again later."}), 500
+            return jsonify({"message": f"Database error: {str(init_error)}"}), 500
     
         # Verify password
         # Check if password is hashed (starts with $2b$) or plain text (for migration)

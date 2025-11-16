@@ -56,9 +56,9 @@ npm start
 
 ## 🔐 Demo Accounts
 
-- **Student**: `student@college.edu` / `student123`
-- **Teacher**: `teacher@college.edu` / `teacher123`
-- **HOD**: `hod@college.edu` / `hod123`
+- **Student**: `student@college.edu` / `student123` OR `student@gmail.com` / `Student`
+- **Teacher**: `teacher@college.edu` / `teacher123` OR `teacher@gmail.com` / `Teacher`
+- **HOD**: `hod@college.edu` / `hod123` OR `hod@gmail.com` / `hod`
 
 Or create your own account at `/signup`
 

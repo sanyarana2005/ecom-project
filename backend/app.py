@@ -148,7 +148,9 @@ def init_db():
             # Hash passwords for demo accounts
             demo_users = [
                 ("student@college.edu", "student123", "student", "John Student", "Computer Science", 1),
+                ("student@gmail.com", "Student", "student", "Student User", "Computer Science", 1),
                 ("teacher@college.edu", "teacher123", "teacher", "Dr. Jane Teacher", "Computer Science", 1),
+                ("teacher@gmail.com", "Teacher", "teacher", "Teacher User", "Computer Science", 1),
                 ("hod@college.edu", "hod123", "hod", "Prof. Smith HOD", "Computer Science", 1),
                 ("hod@gmail.com", "hod", "hod", "HOD User", "Computer Science", 1),
             ]

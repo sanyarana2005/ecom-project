@@ -17,7 +17,8 @@ DB_NAME = "college_booking.db"
 DB_PATH = os.path.join(BASE_DIR, DB_NAME)
 
 app = Flask(__name__)
-CORS(app)
+# CORS configuration for deployment - allow all origins
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 logging.basicConfig(level=logging.INFO)
 
 # Simple token storage (in production, use JWT library)
@@ -86,103 +87,113 @@ def require_hod():
 # ---------------- Init & Seed ----------------
 def init_db():
     """Create tables and seed demo users/resources if missing."""
-    logging.info("Initializing DB at %s", DB_PATH)
-    conn = db_conn()
-    cur = conn.cursor()
+    try:
+        logging.info("Initializing DB at %s", DB_PATH)
+        conn = db_conn()
+        cur = conn.cursor()
+    except Exception as e:
+        logging.error(f"Failed to connect to database: {str(e)}")
+        raise
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS users (
+    try:
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT,
-        role TEXT CHECK(role IN ('student','teacher','hod')),
-        name TEXT,
-        department TEXT,
-        department_id INTEGER
-    )
-    """)
+            username TEXT UNIQUE,
+            password TEXT,
+            role TEXT CHECK(role IN ('student','teacher','hod')),
+            name TEXT,
+            department TEXT,
+            department_id INTEGER
+        )
+        """)
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS resources (
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            type TEXT CHECK(type IN ('seminar','auditorium','lab')),
+            capacity INTEGER
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS bookings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        type TEXT CHECK(type IN ('seminar','auditorium','lab')),
-        capacity INTEGER
-    )
-    """)
+            user_id INTEGER,
+            resource_id INTEGER,
+            title TEXT,
+            date TEXT,
+            start_time TEXT,
+            end_time TEXT,
+            purpose TEXT,
+            status TEXT CHECK(status IN ('pending','approved','rejected','cancelled')) DEFAULT 'pending',
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(resource_id) REFERENCES resources(id)
+        )
+        """)
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS bookings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        resource_id INTEGER,
-        title TEXT,
-        date TEXT,
-        start_time TEXT,
-        end_time TEXT,
-        purpose TEXT,
-        status TEXT CHECK(status IN ('pending','approved','rejected','cancelled')) DEFAULT 'pending',
-        created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY(user_id) REFERENCES users(id),
-        FOREIGN KEY(resource_id) REFERENCES resources(id)
-    )
-    """)
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS departments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT
+        )
+        """)
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS departments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT
-    )
-    """)
+        # Seed users
+        cur.execute("SELECT COUNT(*) FROM users")
+        if cur.fetchone()[0] == 0:
+            logging.info("Seeding users...")
+            # Hash passwords for demo accounts
+            demo_users = [
+                ("student@college.edu", "student123", "student", "John Student", "Computer Science", 1),
+                ("teacher@college.edu", "teacher123", "teacher", "Dr. Jane Teacher", "Computer Science", 1),
+                ("hod@college.edu", "hod123", "hod", "Prof. Smith HOD", "Computer Science", 1),
+                ("hod@gmail.com", "hod", "hod", "HOD User", "Computer Science", 1),
+            ]
+            
+            for email, password, role, name, department, dept_id in demo_users:
+                hashed_pwd = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                cur.execute(
+                    "INSERT INTO users (username, password, role, name, department, department_id) VALUES (?, ?, ?, ?, ?, ?)",
+                    (email.lower(), hashed_pwd, role, name, department, dept_id)
+                )
 
-    # Seed users
-    cur.execute("SELECT COUNT(*) FROM users")
-    if cur.fetchone()[0] == 0:
-        logging.info("Seeding users...")
-        # Hash passwords for demo accounts
-        demo_users = [
-            ("student@college.edu", "student123", "student", "John Student", "Computer Science", 1),
-            ("teacher@college.edu", "teacher123", "teacher", "Dr. Jane Teacher", "Computer Science", 1),
-            ("hod@college.edu", "hod123", "hod", "Prof. Smith HOD", "Computer Science", 1),
-            ("hod@gmail.com", "hod", "hod", "HOD User", "Computer Science", 1),
-        ]
-        
-        for email, password, role, name, department, dept_id in demo_users:
-            hashed_pwd = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            cur.execute(
-                "INSERT INTO users (username, password, role, name, department, department_id) VALUES (?, ?, ?, ?, ?, ?)",
-                (email.lower(), hashed_pwd, role, name, department, dept_id)
+        # Seed resources
+        cur.execute("SELECT COUNT(*) FROM resources")
+        if cur.fetchone()[0] == 0:
+            logging.info("Seeding resources...")
+            cur.executemany(
+                "INSERT INTO resources (name, type, capacity) VALUES (?, ?, ?)",
+                [
+                    ("Seminar Hall", "seminar", 100),
+                    ("Auditorium", "auditorium", 500),
+                    ("Lab", "lab", 30),
+                ],
             )
 
-    # Seed resources
-    cur.execute("SELECT COUNT(*) FROM resources")
-    if cur.fetchone()[0] == 0:
-        logging.info("Seeding resources...")
-        cur.executemany(
-            "INSERT INTO resources (name, type, capacity) VALUES (?, ?, ?)",
-            [
-                ("Seminar Hall", "seminar", 100),
-                ("Auditorium", "auditorium", 500),
-                ("Lab", "lab", 30),
-            ],
-        )
+        # Seed departments
+        cur.execute("SELECT COUNT(*) FROM departments")
+        if cur.fetchone()[0] == 0:
+            logging.info("Seeding departments...")
+            cur.executemany(
+                "INSERT INTO departments (name) VALUES (?)",
+                [
+                    ("Computer Science",),
+                    ("Electronics",),
+                    ("Mechanical",),
+                ],
+            )
 
-    # Seed departments
-    cur.execute("SELECT COUNT(*) FROM departments")
-    if cur.fetchone()[0] == 0:
-        logging.info("Seeding departments...")
-        cur.executemany(
-            "INSERT INTO departments (name) VALUES (?)",
-            [
-                ("Computer Science",),
-                ("Electronics",),
-                ("Mechanical",),
-            ],
-        )
-
-    conn.commit()
-    conn.close()
-    logging.info("DB initialization complete.")
+        conn.commit()
+        conn.close()
+        logging.info("DB initialization complete.")
+    except Exception as e:
+        logging.error(f"Error during DB initialization: {str(e)}")
+        if 'conn' in locals():
+            conn.close()
+        raise
 
 # ---------------- Overlap check ----------------
 def has_overlap(cur, resource_id, date, start_time, end_time, ignore_booking_id=None):
@@ -216,61 +227,91 @@ def login():
     if not email or not password:
         return jsonify({"message": "Email and password are required"}), 400
 
-    conn = db_conn()
-    cur = conn.cursor()
-    
-    # Check database for user
-    cur.execute("SELECT id, username, password, role, name, department, department_id FROM users WHERE username = ?", (email,))
-    user_row = cur.fetchone()
-    
-    if not user_row:
-        conn.close()
-        return jsonify({"message": "Invalid credentials"}), 401
-    
-    user_id, username, hashed_password, role, name, department, department_id = user_row
-    
-    # Verify password
-    # Check if password is hashed (starts with $2b$) or plain text (for migration)
-    password_valid = False
-    if hashed_password and hashed_password.startswith('$2b$'):
-        # Password is hashed, verify using bcrypt
+    try:
+        conn = db_conn()
+        cur = conn.cursor()
+        
+        # Check database for user
+        cur.execute("SELECT id, username, password, role, name, department, department_id FROM users WHERE username = ?", (email,))
+        user_row = cur.fetchone()
+        
+        if not user_row:
+            conn.close()
+            return jsonify({"message": "Invalid credentials"}), 401
+        
+        user_id, username, hashed_password, role, name, department, department_id = user_row
+    except Exception as db_error:
+        logging.error(f"Database query error: {str(db_error)}")
+        # Try to initialize database if connection fails
         try:
-            password_valid = bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
-        except Exception as e:
-            logging.error(f"Bcrypt check error: {str(e)}")
-            password_valid = False
-    else:
-        # Plain text password (for existing users - migrate on first login)
-        if password == hashed_password:
-            password_valid = True
-            # Hash the password and update database
-            hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            cur.execute("UPDATE users SET password = ? WHERE id = ?", (hashed, user_id))
-            conn.commit()
+            init_db()
+            conn = db_conn()
+            cur = conn.cursor()
+            cur.execute("SELECT id, username, password, role, name, department, department_id FROM users WHERE username = ?", (email,))
+            user_row = cur.fetchone()
+            if not user_row:
+                conn.close()
+                return jsonify({"message": "Invalid credentials"}), 401
+            user_id, username, hashed_password, role, name, department, department_id = user_row
+        except Exception as init_error:
+            logging.error(f"Database initialization failed: {str(init_error)}")
+            if 'conn' in locals():
+                try:
+                    conn.close()
+                except:
+                    pass
+            return jsonify({"message": "Database error. Please try again later."}), 500
     
-    if not password_valid:
+        # Verify password
+        # Check if password is hashed (starts with $2b$) or plain text (for migration)
+        password_valid = False
+        if hashed_password and hashed_password.startswith('$2b$'):
+            # Password is hashed, verify using bcrypt
+            try:
+                password_valid = bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+            except Exception as e:
+                logging.error(f"Bcrypt check error: {str(e)}")
+                password_valid = False
+        else:
+            # Plain text password (for existing users - migrate on first login)
+            if password == hashed_password:
+                password_valid = True
+                # Hash the password and update database
+                hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                cur.execute("UPDATE users SET password = ? WHERE id = ?", (hashed, user_id))
+                conn.commit()
+        
+        if not password_valid:
+            conn.close()
+            logging.warning(f"Login failed for user: {email}")
+            return jsonify({"message": "Invalid credentials"}), 401
+        
         conn.close()
-        logging.warning(f"Login failed for user: {email}")
-        return jsonify({"message": "Invalid credentials"}), 401
-    
-    conn.close()
-    
-    # Generate token
-    token = secrets.token_urlsafe(32)
-    TOKEN_STORE[token] = user_id
-    
-    # Return response matching frontend format
-    return jsonify({
-        "token": token,
-        "user": {
-            "id": user_id,
-            "name": name or username,
-            "email": email,
-            "role": role,
-            "department": department or "Computer Science",
-            "department_id": department_id or 1
-        }
-    })
+        
+        # Generate token
+        token = secrets.token_urlsafe(32)
+        TOKEN_STORE[token] = user_id
+        
+        # Return response matching frontend format
+        return jsonify({
+            "token": token,
+            "user": {
+                "id": user_id,
+                "name": name or username,
+                "email": email,
+                "role": role,
+                "department": department or "Computer Science",
+                "department_id": department_id or 1
+            }
+        })
+    except Exception as e:
+        logging.error(f"Login error: {str(e)}")
+        if 'conn' in locals():
+            try:
+                conn.close()
+            except:
+                pass
+        return jsonify({"message": "Internal server error"}), 500
 
 @app.route("/api/auth/me", methods=["GET"])
 def get_current_user():
@@ -737,10 +778,19 @@ def update_booking(booking_id):
         "action": action
     })
 
+# ---------------- Initialize Database on App Start ----------------
+# Initialize database when app is imported (works with both dev server and gunicorn)
+try:
+    init_db()
+except Exception as e:
+    logging.error(f"Failed to initialize database: {str(e)}")
+    # Don't raise - let the app start and handle errors in routes
+
 # ---------------- Main ----------------
 if __name__ == "__main__":
-    # Ensure DB and tables exist
-    init_db()
+    # Get port from environment variable (for deployment) or default to 8000
+    port = int(os.environ.get("PORT", 8000))
     # Run dev server (using port 8000 to avoid conflict with macOS AirPlay)
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    # In production, use gunicorn: gunicorn app:app --config gunicorn_config.py
+    app.run(host="0.0.0.0", port=port, debug=False)
 

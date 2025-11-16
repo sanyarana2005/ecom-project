@@ -136,10 +136,10 @@ const ApproverDashboard = () => {
         const ganttTitle = `${timeStr} • ${eventTitle} • ${durationText}`;
         
         return {
-          id: event.id,
+        id: event.id,
           title: ganttTitle,
-          start: event.start,
-          end: event.end,
+        start: event.start,
+        end: event.end,
           backgroundColor: backgroundColor,
           borderColor: backgroundColor, // Match border to background
           textColor: textColor,
@@ -222,15 +222,15 @@ const ApproverDashboard = () => {
                           Settings
                         </button>
                         <div className="border-t-2 border-black"></div>
-                        <button
+              <button
                           onClick={() => {
                             setShowProfileMenu(false);
                             handleLogout();
                           }}
                           className="w-full text-left px-4 py-3 text-black font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors"
-                        >
-                          Logout
-                        </button>
+              >
+                Logout
+              </button>
                       </div>
                     </div>
                   </>
@@ -321,7 +321,7 @@ const ApproverDashboard = () => {
                             }`}>
                               Status: {request.status.toUpperCase()}
                             </span>
-                          </div>
+                        </div>
                         </div>
                       </div>
                     </div>

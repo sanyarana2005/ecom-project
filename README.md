@@ -32,8 +32,6 @@ python app.py
 npm start
 ```
 
-**📖 For detailed setup instructions, see [SETUP_GUIDE.md](./SETUP_GUIDE.md)**
-
 ---
 
 ## ✨ Features
@@ -60,9 +58,7 @@ npm start
 
 - **Student**: `student@college.edu` / `student123`
 - **Teacher**: `teacher@college.edu` / `teacher123`
-- **Teacher (Simple)**: `teacher@gmail.com` / `Teacher`
 - **HOD**: `hod@college.edu` / `hod123`
-- **HOD (Simple)**: `hod@gmail.com` / `hod`
 
 Or create your own account at `/signup`
 
@@ -100,7 +96,7 @@ Or create your own account at `/signup`
 
 ---
 
-## 📝 API Documentation
+## 📝 API Endpoints
 
 All API endpoints are prefixed with `/api`:
 
@@ -136,13 +132,6 @@ All API endpoints are prefixed with `/api`:
 
 ---
 
-## 📚 Documentation
-
-- [Setup Guide](./SETUP_GUIDE.md) - Detailed setup instructions
-- [Backend README](./backend/README.md) - Backend documentation
-
----
-
 ## 🎉 Getting Started
 
 1. **Start Backend**: `cd backend && source venv/bin/activate && python app.py`
@@ -150,12 +139,6 @@ All API endpoints are prefixed with `/api`:
 3. **Open Browser**: `http://localhost:3000`
 4. **Sign Up** or **Login** with demo accounts
 5. **Start Booking!**
-
----
-
-## 📄 License
-
-This project is for educational purposes.
 
 ---
 

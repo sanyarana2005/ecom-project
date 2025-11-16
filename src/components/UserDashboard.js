@@ -268,15 +268,15 @@ const UserDashboard = () => {
                         Settings
                       </button>
                       <div className="border-t-2 border-black"></div>
-                      <button
+              <button
                         onClick={() => {
                           setShowProfileMenu(false);
                           handleLogout();
                         }}
                         className="w-full text-left px-4 py-3 text-black font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors"
-                      >
-                        Logout
-                      </button>
+              >
+                Logout
+              </button>
                     </div>
                   </div>
                 </>
@@ -453,7 +453,7 @@ const UserDashboard = () => {
               setShowBookingForm(true);
             }}
               className="w-full bg-yellow-400 text-black px-12 py-6 border-4 border-black font-black uppercase tracking-wide hover:bg-yellow-500 shadow-brutal text-xl"
-            >
+          >
               + Book Resource
             </button>
 

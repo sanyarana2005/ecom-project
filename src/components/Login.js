@@ -71,20 +71,20 @@ const Login = () => {
         {/* Right Side - Login Form */}
         <div className="flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-md w-full">
-          {/* Header Section */}
+        {/* Header Section */}
           <div className="text-center mb-8 lg:hidden">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center bg-brutal-black border-2 border-brutal-black shadow-brutal-sm mb-4">
-              <svg className="h-6 w-6 text-brutal-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <h1 className="brutalist-title mb-2">
-              COLLEGE <span className="text-brutal-yellow">RESOURCE</span> BOOKING
-            </h1>
-            <p className="brutalist-text text-center">
-              Sign in to book resources
-            </p>
+          <div className="mx-auto h-12 w-12 flex items-center justify-center bg-brutal-black border-2 border-brutal-black shadow-brutal-sm mb-4">
+            <svg className="h-6 w-6 text-brutal-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
           </div>
+          <h1 className="brutalist-title mb-2">
+            COLLEGE <span className="text-brutal-yellow">RESOURCE</span> BOOKING
+          </h1>
+          <p className="brutalist-text text-center">
+            Sign in to book resources
+          </p>
+        </div>
         
         {/* Role Selection */}
         {!selectedRole ? (
